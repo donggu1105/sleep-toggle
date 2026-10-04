@@ -210,6 +210,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSApplication.shared.terminate(nil)
     }
 
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // 설치 프로그램의 정상 종료 요청도 관리자 인증·상태 재조회가 끝날 때까지 거절한다.
+        isChanging ? .terminateCancel : .terminateNow
+    }
+
     private func showError(title: String, message: String) {
         NSApplication.shared.activate(ignoringOtherApps: true)
         let alert = NSAlert()
@@ -235,14 +240,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if includeMenu {
                 let allowed = StatusIcon.make(mode: .allowed)
                 let blocked = StatusIcon.make(mode: .blocked)
+                let idleTermination = applicationShouldTerminate(NSApplication.shared)
+                isChanging = true
+                let busyTermination = applicationShouldTerminate(NSApplication.shared)
+                isChanging = false
                 guard statusItem?.button?.image != nil, statusItem?.button?.title == "",
                       !loginItem.isEnabled, loginItem.action == nil, toggleItem.isEnabled,
+                      idleTermination == .terminateNow, busyTermination == .terminateCancel,
                       toggleItem.title == "\(mode!.opposite.title)으로 전환",
                       allowed.tiffRepresentation != blocked.tiffRepresentation else {
                     throw NSError(domain: "SleepToggle", code: 1, userInfo: [NSLocalizedDescriptionKey: "메뉴 또는 아이콘 검증에 실패했습니다."])
                 }
                 result["menuItems"] = menu.items.filter { !$0.isSeparatorItem && !$0.isHidden }.map(\.title)
                 result["statusIcon"] = "검증 완료"
+                result["terminationGuard"] = "검증 완료"
             }
             let data = try JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted, .sortedKeys])
             print(String(decoding: data, as: UTF8.self))

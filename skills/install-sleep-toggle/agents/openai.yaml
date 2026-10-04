@@ -1,0 +1,4 @@
+interface:
+  display_name: "Install Sleep Toggle"
+  short_description: "해·달 메뉴 막대 앱을 빌드해 설치하고 자동 실행을 확인합니다"
+  default_prompt: "$install-sleep-toggle 이 Mac에 Sleep Toggle을 설치하고 실행해 줘."
